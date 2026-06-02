@@ -65,7 +65,11 @@ Un workflow GitHub Actions se déclenche automatiquement à chaque push sur la b
 | **Docker Scout** | Scan des vulnérabilités CVE (critiques et hautes) |
 | **Docker Push** | Publication sur Docker Hub avec les tags `latest` et `<sha>` |
 
-### Image Docker
+### Image Dockermise à jour du README pour la partie CI / CD
+CI - Build, Scout & Push #3: Commit 2586f45 pushed by Altrevis
+main	
+1 minute ago
+ 24s
 
 L'image est disponible sur Docker Hub :
 

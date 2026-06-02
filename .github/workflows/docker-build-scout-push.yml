@@ -26,15 +26,15 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:latest \
             ./azure-vote
 
-      - name: Docker Scout - Analyse des vulnérabilités
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:${{ github.sha }}
-          only-severities: critical,high
-          exit-code: false
-
       - name: Push Docker image to Docker Hub
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:latest
+
+      - name: Docker Scout - Analyse des vulnérabilités
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: registry://${{ secrets.DOCKERHUB_USERNAME }}/voting-app:${{ github.sha }}
+          only-severities: critical,high
+          exit-code: false
