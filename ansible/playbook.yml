@@ -1,0 +1,28 @@
+- name: Install Nginx and deploy custom index
+  hosts: default
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Install Nginx if not present
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Replace default Nginx index.html
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+            <body>
+              <h1>It works</h1>
+            </body>
+          </html>
+        mode: "0644"
+
+    - name: Ensure Nginx is started and enabled
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
