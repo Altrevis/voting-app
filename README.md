@@ -48,3 +48,34 @@ sudo docker compose up --build
 ```
 
 L'application est ensuite accessible sur [http://localhost:8080](http://localhost:8080).
+
+## CI/CD - GitHub Actions
+
+[![CI - Build, Scout & Push](https://github.com/Altrevis/voting-app/actions/workflows/docker-build-scout-push.yml/badge.svg)](https://github.com/Altrevis/voting-app/actions/workflows/docker-build-scout-push.yml)
+
+Un workflow GitHub Actions se déclenche automatiquement à chaque push sur la branche `main`.
+
+### Étapes du pipeline
+
+| Étape | Description |
+|---|---|
+| **Checkout** | Récupération du code source |
+| **Login Docker Hub** | Authentification via les secrets GitHub |
+| **Docker Build** | Construction de l'image depuis `./azure-vote` |
+| **Docker Scout** | Scan des vulnérabilités CVE (critiques et hautes) |
+| **Docker Push** | Publication sur Docker Hub avec les tags `latest` et `<sha>` |
+
+### Image Docker
+
+L'image est disponible sur Docker Hub :
+
+```bash
+docker pull altrevis/voting-app:latest
+```
+
+### Secrets GitHub requis
+
+| Secret | Description |
+|---|---|
+| `DOCKERHUB_USERNAME` | Nom d'utilisateur Docker Hub |
+| `DOCKERHUB_TOKEN` | Access token Docker Hub (Personal access tokens) |
