@@ -112,24 +112,59 @@ helm/
 
 ### Déploiement local avec Minikube
 
-Un script automatisé installe et configure l'ensemble de la stack en local :
+#### 1. Démarrer Minikube
+
+```bash
+minikube start --driver=docker --cpus=2 --memory=4096
+```
+
+#### 2. Construire l'image dans le Docker de Minikube
+
+L'image n'étant pas publiée sur Docker Hub, elle doit être construite directement dans l'environnement Docker interne de Minikube (`pullPolicy: Never`) :
+
+```bash
+eval $(minikube docker-env)
+docker build -t altrevis/azure-vote:latest ./azure-vote/
+```
+
+#### 3. Déployer tous les composants
 
 ```bash
 cd helm/
-bash setup-local-minikube.sh
+bash install-helm-components.sh
 ```
 
-Ce script :
-1. Installe Minikube, kubectl et Helm si absents
-2. Démarre un cluster Kubernetes local (driver Docker)
-3. Installe le **Nginx Ingress Controller** via Helm
-4. Installe **Redis** (bitnami, mode standalone) via Helm
-5. Déploie l'**Azure Vote App** via le chart local
-6. Configure automatiquement `/etc/hosts` → `azure-vote.local`
+Ce script installe dans l'ordre :
+1. **Nginx Ingress Controller** via Helm
+2. **Redis** (bitnami, mode standalone) via Helm
+3. **Azure Vote App** via le chart local
+
+#### 4. Activer le tunnel (LoadBalancer)
+
+Dans un terminal dédié, laisser tourner :
+
+```bash
+minikube tunnel
+```
+
+#### 5. Configurer `/etc/hosts`
+
+Récupérer l'External-IP attribuée par le tunnel :
+
+```bash
+kubectl get svc -n ingress-nginx ingress-nginx-controller
+# Colonne EXTERNAL-IP → ex: 10.105.94.101
+```
+
+Ajouter la ligne dans `/etc/hosts` :
+
+```bash
+echo "<EXTERNAL-IP>  azure-vote.local" | sudo tee -a /etc/hosts
+```
 
 L'application est ensuite accessible sur [http://azure-vote.local](http://azure-vote.local).
 
-> Si l'application n'est pas accessible, lancer `minikube tunnel` dans un terminal séparé.
+> Le terminal `minikube tunnel` doit rester actif pour que l'IP reste joignable.
 
 ### Déploiement sur Azure AKS
 
