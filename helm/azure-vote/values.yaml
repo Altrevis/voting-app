@@ -1,0 +1,56 @@
+# Nombre de réplicas pour le déploiement
+replicaCount: 1
+
+# Configuration de l'image Docker
+image:
+  repository: altrevis/azure-vote
+  pullPolicy: Never
+  tag: "latest"
+
+# Configuration du Service Kubernetes
+service:
+  type: ClusterIP
+  port: 80
+
+# Configuration de l'Ingress (requiert Nginx Ingress Controller)
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: azure-vote.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: azure-vote-tls
+  #    hosts:
+  #      - azure-vote.local
+
+# Connexion Redis (déployé séparément via Helm bitnami/redis)
+redis:
+  # Nom du service Redis créé par le chart bitnami/redis (standalone: redis-master)
+  host: redis-master
+  port: 6379
+  # Mot de passe Redis — doit correspondre à celui fourni lors de l'installation du chart Redis
+  password: "1234"
+
+# Configuration de l'application Azure Vote
+app:
+  title: "Voting App"
+  vote1: "Cats"
+  vote2: "Dogs"
+  showHost: "false"
+
+# Ressources (CPU / mémoire) allouées au pod
+resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Remplacer le nom du chart
+nameOverride: ""
+fullnameOverride: ""

@@ -83,3 +83,105 @@ docker pull altrevis/voting-app:latest
 |---|---|
 | `DOCKERHUB_USERNAME` | Nom d'utilisateur Docker Hub |
 | `DOCKERHUB_TOKEN` | Access token Docker Hub (Personal access tokens) |
+
+## Déploiement Kubernetes avec Helm
+
+### Prérequis
+
+- [Docker](https://docs.docker.com/engine/install/) installé et démarré
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) (cluster local) **ou** un cluster AKS (Azure)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) configuré
+- [Helm 3](https://helm.sh/docs/intro/install/)
+
+### Structure du chart
+
+```
+helm/
+├── install-helm-components.sh   # Script d'installation pour AKS
+├── setup-local-minikube.sh      # Script d'installation pour Minikube (local)
+└── azure-vote/
+    ├── Chart.yaml
+    ├── values.yaml
+    └── templates/
+        ├── deployment.yaml
+        ├── service.yaml
+        ├── ingress.yaml
+        ├── secret.yaml
+        └── _helpers.tpl
+```
+
+### Déploiement local avec Minikube
+
+Un script automatisé installe et configure l'ensemble de la stack en local :
+
+```bash
+cd helm/
+bash setup-local-minikube.sh
+```
+
+Ce script :
+1. Installe Minikube, kubectl et Helm si absents
+2. Démarre un cluster Kubernetes local (driver Docker)
+3. Installe le **Nginx Ingress Controller** via Helm
+4. Installe **Redis** (bitnami, mode standalone) via Helm
+5. Déploie l'**Azure Vote App** via le chart local
+6. Configure automatiquement `/etc/hosts` → `azure-vote.local`
+
+L'application est ensuite accessible sur [http://azure-vote.local](http://azure-vote.local).
+
+> Si l'application n'est pas accessible, lancer `minikube tunnel` dans un terminal séparé.
+
+### Déploiement sur Azure AKS
+
+```bash
+# Connexion au cluster AKS
+az aks get-credentials --resource-group <rg> --name <cluster>
+
+cd helm/
+bash install-helm-components.sh
+```
+
+### Composants Helm installés
+
+| Composant | Chart | Namespace |
+|---|---|---|
+| Nginx Ingress Controller | `ingress-nginx/ingress-nginx` | `ingress-nginx` |
+| Redis | `bitnami/redis` (standalone) | `voting-app` |
+| Azure Vote App | chart local `helm/azure-vote` | `voting-app` |
+
+### Paramètres configurables (`values.yaml`)
+
+| Paramètre | Description | Défaut |
+|---|---|---|
+| `image.repository` | Image Docker de l'app | `altrevis/azure-vote` |
+| `image.tag` | Tag de l'image | `latest` |
+| `replicaCount` | Nombre de réplicas | `1` |
+| `redis.host` | Hostname du service Redis | `redis-master` |
+| `redis.password` | Mot de passe Redis | `1234` |
+| `app.title` | Titre affiché | `Voting App` |
+| `app.vote1` | Libellé du vote 1 | `Cats` |
+| `app.vote2` | Libellé du vote 2 | `Dogs` |
+| `ingress.hosts[0].host` | Nom de domaine | `azure-vote.local` |
+
+### Vérifications post-déploiement
+
+```bash
+# État des pods
+kubectl get pods -n voting-app
+kubectl get pods -n ingress-nginx
+
+# Ingress et services
+kubectl get ingress -n voting-app
+kubectl get svc -n voting-app
+
+# Releases Helm installées
+helm list -n voting-app
+
+# Logs de l'application
+kubectl logs -n voting-app -l app.kubernetes.io/name=azure-vote --tail=50
+
+# Test Redis
+kubectl exec -it -n voting-app \
+  $(kubectl get pod -n voting-app -l app.kubernetes.io/name=redis -o jsonpath='{.items[0].metadata.name}') \
+  -- redis-cli -a 1234 ping
+```
